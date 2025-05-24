@@ -3,8 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - main  # Alterado para main, que é o branch padrão mais comum
-      - master  # Mantido para compatibilidade
+      - master  # Usando o branch master como principal
 
   # Permite executar o workflow manualmente na aba Actions do GitHub
   workflow_dispatch:
