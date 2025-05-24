@@ -35,7 +35,7 @@ const Index = () => {
       name: 'Bolsa Tote Jeans Reciclado',
       description: 'Bolsa espaçosa feita com calças jeans recicladas, design moderno e funcional.',
       price: 89.90,
-      image: '/bolsa-tote-jeans-reciclado.jpg',
+      image: 'bolsa-tote-jeans-reciclado.jpg',
       category: 'Bolsas',
       artisan: 'Maria Silva',
     },
@@ -44,7 +44,7 @@ const Index = () => {
       name: 'Mochila Jeans Sustentável',
       description: 'Mochila resistente produzida com reaproveitamento de jeans, com compartimentos organizados.',
       price: 119.90,
-      image: '/mochila-jeans-sustentavel.jpg',
+      image: 'mochila-jeans-sustentavel.jpg',
       category: 'Bolsas',
       artisan: 'Joana Lima',
     },
@@ -53,7 +53,7 @@ const Index = () => {
       name: 'Clutch Patchwork Jeans',
       description: 'Clutch elegante feita com retalhos de jeans em técnica patchwork, ideal para eventos.',
       price: 65.00,
-      image: '/clutch-patchwork-jeans.jpg',
+      image: 'clutch-patchwork-jeans.jpg',
       category: 'Bolsas',
       artisan: 'Ana Ferreira',
     },
@@ -145,7 +145,7 @@ const Index = () => {
                     alt={product.name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      e.currentTarget.src = '/placeholder.svg';
+                      e.currentTarget.src = 'placeholder.svg';
                     }}
                     loading="lazy"
                   />
