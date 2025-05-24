@@ -1,9 +1,8 @@
-{
-  "name": "talentos",
+{  "name": "talentos",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://username.github.io/projeto-talentos/",
+  "homepage": "https://cleunir10.github.io/projeto-talentos/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
