@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teste do GitHub Pages</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .container {
+      background-color: #f5f5f5;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #4CAF50;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .status {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .success {
+      background-color: #dff2bf;
+      color: #4F8A10;
+    }
+    .error {
+      background-color: #ffbaba;
+      color: #D8000C;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Teste do GitHub Pages para Projeto Talentos</h1>
+    <p>Esta é uma página simples para testar se o GitHub Pages está funcionando corretamente.</p>
+    
+    <button id="testBtn">Testar JavaScript</button>
+    
+    <div id="status" class="status"></div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const testBtn = document.getElementById('testBtn');
+      const statusDiv = document.getElementById('status');
+      
+      testBtn.addEventListener('click', function() {
+        try {
+          // Teste simples
+          const testObject = {name: 'Projeto Talentos'};
+          statusDiv.textContent = `JavaScript está funcionando! Objeto de teste: ${JSON.stringify(testObject)}`;
+          statusDiv.className = 'status success';
+        } catch (error) {
+          statusDiv.textContent = `Erro: ${error.message}`;
+          statusDiv.className = 'status error';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

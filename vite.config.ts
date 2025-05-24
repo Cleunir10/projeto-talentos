@@ -24,28 +24,8 @@ export default defineConfig(({ mode }) => ({
     },
   },  build: {
     assetsDir: 'assets',
-    rollupOptions: {
-      output: {
-        manualChunks: (id) => {
-          if (id.includes('node_modules')) {
-            if (id.includes('react')) {
-              return 'react-vendor';
-            }
-            if (id.includes('@radix-ui')) {
-              return 'ui-vendor';
-            }
-            return 'vendor';
-          }
-        },
-      },
-    },
     sourcemap: true,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-      },
-    },
+    minify: 'esbuild', // usando esbuild em vez de terser para simplificar
   },
   publicDir: 'public',
 }));
