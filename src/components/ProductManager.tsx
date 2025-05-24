@@ -96,7 +96,7 @@ export function ProductManager() {
       preco: parseFloat(formData.preco),
       categoria: formData.categoria,
       estoque: parseInt(formData.estoque),
-      imagem: formData.imagem || '/placeholder.svg'
+      imagem: formData.imagem || 'placeholder.svg'
     };
 
     if (editingProduct) {
@@ -241,7 +241,7 @@ export function ProductManager() {
                 alt={product.nome}
                 className="h-full w-full object-cover transition-opacity duration-300"
                 onError={(e) => {
-                  e.currentTarget.src = '/placeholder.svg';
+                  e.currentTarget.src = 'placeholder.svg';
                   e.currentTarget.classList.add('opacity-50');
                 }}
                 loading="lazy"

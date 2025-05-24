@@ -172,7 +172,7 @@ export function ProductCatalog({ onAddToCart, userType }: ProductCatalogProps) {
                 alt={product.nome}
                 className="h-full w-full object-cover rounded-md"
                 onError={(e) => {
-                  e.currentTarget.src = '/placeholder.svg';
+                  e.currentTarget.src = 'placeholder.svg';
                 }}
                 loading="lazy"
               />
@@ -233,7 +233,7 @@ export function ProductCatalog({ onAddToCart, userType }: ProductCatalogProps) {
                             alt={product.nome}
                             className="h-full w-full object-cover"
                             onError={(e) => {
-                              e.currentTarget.src = '/placeholder.svg';
+                              e.currentTarget.src = 'placeholder.svg';
                               e.currentTarget.classList.add('opacity-50');
                             }}
                           />

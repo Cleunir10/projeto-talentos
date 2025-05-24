@@ -133,7 +133,7 @@ export function Cart({ items, onRemoveItem, onUpdateQuantity }: CartProps) {
                       alt={item.nome}
                       className="h-full w-full object-cover"
                       onError={(e) => {
-                        e.currentTarget.src = '/placeholder.svg';
+                        e.currentTarget.src = 'placeholder.svg';
                       }}
                     />
                   </div>
