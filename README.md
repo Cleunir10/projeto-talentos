@@ -40,9 +40,9 @@ npm run dev
 - Clique em "New codespace" para iniciar um novo ambiente Codespace.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
-## What technologies are used for this project?
+## Quais tecnologias são utilizadas neste projeto?
 
-This project is built with:
+Este projeto foi desenvolvido com:
 
 - Vite
 - TypeScript
@@ -50,11 +50,11 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
-## How can I deploy this project?
+## Como posso implementar este projeto?
 
-1. Build the project:
+1. Compile o projeto:
 ```sh
 npm run build
 ```
 
-2. The built files will be in the `dist` directory, which you can then deploy to your preferred hosting platform.
+2. Os arquivos compilados estarão no diretório `dist`, que você poderá então implantar na sua plataforma de hospedagem preferida.
