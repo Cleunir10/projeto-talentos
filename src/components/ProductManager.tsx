@@ -24,7 +24,7 @@ export function ProductManager() {
       nome: 'Bolsa Ecológica Jeans',
       descricao: 'Bolsa feita com calças jeans recicladas, forrada e com alças reforçadas. Produto único e sustentável.',
       preco: 75.90,
-      imagem: '/bolsa-ecologica-jeans.jpg',
+      imagem: 'bolsa-ecologica-jeans.jpg',
       categoria: 'Bolsas',
       estoque: 5
     },
@@ -33,7 +33,7 @@ export function ProductManager() {
       nome: 'Mochila Jeans Vintage',
       descricao: 'Mochila estilo vintage produzida com jeans reciclado, compartimento para notebook e bolsos externos.',
       preco: 129.90,
-      imagem: '/mochila-jeans-vintage.jpg',
+      imagem: 'mochila-jeans-vintage.jpg',
       categoria: 'Bolsas',
       estoque: 3
     },
@@ -42,7 +42,7 @@ export function ProductManager() {
       nome: 'Bolsa Tote Jeans Reciclado',
       descricao: 'Bolsa tote espaçosa feita com retalhos de jeans em técnica patchwork, ideal para uso diário.',
       preco: 85.00,
-      imagem: '/bolsa-tote-jeans-reciclado.jpg',
+      imagem: 'bolsa-tote-jeans-reciclado.jpg',
       categoria: 'Bolsas',
       estoque: 4
     },
@@ -51,7 +51,7 @@ export function ProductManager() {
       nome: 'Clutch de Jeans Elegante',
       descricao: 'Clutch sofisticada produzida com jeans reciclado e aplicações artesanais.',
       preco: 55.50,
-      imagem: '/clutch-jeans-elegante.jpg',
+      imagem: 'clutch-jeans-elegante.jpg',
       categoria: 'Bolsas',
       estoque: 6
     },
@@ -60,7 +60,7 @@ export function ProductManager() {
       nome: 'Bolsa Carteiro Jeans',
       descricao: 'Bolsa carteiro estilo mensageiro feita com jeans reciclado, ideal para o dia a dia e uso profissional.',
       preco: 95.00,
-      imagem: '/bolsa-carteiro-jeans.jpg',
+      imagem: 'bolsa-carteiro-jeans.jpg',
       categoria: 'Bolsas',
       estoque: 3
     },
@@ -69,7 +69,7 @@ export function ProductManager() {
       nome: 'Mini Bolsa Jeans Transversal',
       descricao: 'Mini bolsa transversal feita com jeans reciclado, perfeita para sair com o essencial.',
       preco: 65.00,
-      imagem: '/mini-bolsa-jeans-transversal.jpg',
+      imagem: 'mini-bolsa-jeans-transversal.jpg',
       categoria: 'Bolsas',
       estoque: 4
     }
