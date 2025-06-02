@@ -5,6 +5,7 @@ import { Scissors, Users, ShoppingCart, Heart, Recycle, Star } from "lucide-reac
 import { LoginModal } from "@/components/LoginModal";
 import { Dashboard } from "@/components/Dashboard";
 import { Badge } from "@/components/ui/badge";
+import { TestConnection } from "@/components/TestConnection";
 
 const Index = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -65,6 +66,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+      <TestConnection />
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-green-100">
         <div className="container mx-auto px-4 py-4">
