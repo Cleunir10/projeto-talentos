@@ -1,11 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
-import { Database } from './database.types'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+// Estas credenciais são públicas e só têm acesso a dados públicos
+const supabaseUrl = 'https://rlfqurnrqufpkzygryue.supabase.co'
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsZnF1cm5ycXVmcGt6eWdyeXVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDI0MDI4MTcsImV4cCI6MjAxNzk3ODgxN30.DSOB_XMkAhBLPIQFG-OFGYqGHm3XPGS6lvfW87qIHE8'
 
-if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Missing Supabase environment variables')
-}
-
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
