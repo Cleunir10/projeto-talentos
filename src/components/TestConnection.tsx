@@ -12,17 +12,22 @@ interface Produto {
 export const TestConnection: React.FC = () => {
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [error, setError] = useState<string | null>(null)
+
   useEffect(() => {
     const fetchProdutos = async () => {
       try {
-        console.log('Tentando conectar ao Supabase...')
+        // Teste de conectividade básica
+        const response = await fetch('https://rftmgmpxcnkkheyrxzwa.supabase.co/rest/v1/health')
+        console.log('Status da API Supabase:', response.status)
+        
+        // Tenta buscar os produtos
         const { data, error } = await supabase
           .from('produtos')
           .select('*')
         
         if (error) {
           console.error('Erro Supabase:', error)
-          setError('Erro ao conectar com o Supabase: ' + error.message)
+          setError(`Erro ao conectar com o Supabase: ${error.message}\nDetalhes: ${error.details}`)
           return
         }
         
@@ -30,7 +35,7 @@ export const TestConnection: React.FC = () => {
         setProdutos(data || [])
       } catch (err) {
         console.error('Erro na requisição:', err)
-        setError('Erro ao fazer a requisição: ' + (err as Error).message)
+        setError(`Erro na requisição: ${err instanceof Error ? err.message : 'Erro desconhecido'}\n\nPor favor, verifique sua conexão com a internet e tente novamente.`)
       }
     }
 
