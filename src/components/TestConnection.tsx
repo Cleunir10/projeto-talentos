@@ -12,30 +12,25 @@ interface Produto {
 export const TestConnection: React.FC = () => {
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [error, setError] = useState<string | null>(null)
-
   useEffect(() => {
     const fetchProdutos = async () => {
       try {
-        // Teste de conectividade básica
-        const response = await fetch('https://rftmgmpxcnkkheyrxzwa.supabase.co/rest/v1/health')
-        console.log('Status da API Supabase:', response.status)
-        
-        // Tenta buscar os produtos
+        console.log('Iniciando busca de produtos...')
         const { data, error } = await supabase
           .from('produtos')
           .select('*')
         
         if (error) {
           console.error('Erro Supabase:', error)
-          setError(`Erro ao conectar com o Supabase: ${error.message}\nDetalhes: ${error.details}`)
+          setError(`Erro ao buscar produtos: ${error.message}`)
           return
         }
         
-        console.log('Dados recebidos:', data)
+        console.log('Produtos encontrados:', data?.length || 0)
         setProdutos(data || [])
       } catch (err) {
         console.error('Erro na requisição:', err)
-        setError(`Erro na requisição: ${err instanceof Error ? err.message : 'Erro desconhecido'}\n\nPor favor, verifique sua conexão com a internet e tente novamente.`)
+        setError('Erro ao conectar com o banco de dados. Por favor, tente novamente mais tarde.')
       }
     }
 
