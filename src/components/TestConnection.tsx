@@ -12,19 +12,26 @@ interface Produto {
 export const TestConnection: React.FC = () => {
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [error, setError] = useState<string | null>(null)
-
   useEffect(() => {
     const fetchProdutos = async () => {
-      const { data, error } = await supabase
-        .from('produtos')
-        .select('*')
-      
-      if (error) {
-        setError('Erro ao conectar com o Supabase: ' + error.message)
-        return
+      try {
+        console.log('Tentando conectar ao Supabase...')
+        const { data, error } = await supabase
+          .from('produtos')
+          .select('*')
+        
+        if (error) {
+          console.error('Erro Supabase:', error)
+          setError('Erro ao conectar com o Supabase: ' + error.message)
+          return
+        }
+        
+        console.log('Dados recebidos:', data)
+        setProdutos(data || [])
+      } catch (err) {
+        console.error('Erro na requisição:', err)
+        setError('Erro ao fazer a requisição: ' + (err as Error).message)
       }
-      
-      setProdutos(data || [])
     }
 
     fetchProdutos()
