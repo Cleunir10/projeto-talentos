@@ -20,11 +20,7 @@ export const supabase = createClient<Database>(
     },
     global: {
       headers: {
-        'X-Initial-Referrer': 'https://cleunir10.github.io',
-        'X-Client-Info': 'supabase-js/2.x',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Authorization, X-Client-Info, apikey, Content-Type'
+        'X-Custom-Header': 'application/json'
       }
     },
     db: {
@@ -32,3 +28,22 @@ export const supabase = createClient<Database>(
     }
   }
 )
+
+// Função auxiliar para verificar a conexão
+export const testDatabaseConnection = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('produtos')
+      .select('count(*)', { count: 'exact', head: true })
+    
+    if (error) {
+      console.error('Erro na conexão com o Supabase:', error)
+      return { success: false, error: error.message }
+    }
+    
+    return { success: true, data }
+  } catch (err) {
+    console.error('Erro inesperado ao testar conexão:', err)
+    return { success: false, error: 'Erro inesperado ao conectar com o banco de dados' }
+  }
+}

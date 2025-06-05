@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, testDatabaseConnection } from '../lib/supabase'
 
 interface Produto {
   id: string
@@ -13,62 +13,54 @@ export const TestConnection: React.FC = () => {
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'failed'>('checking');
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'failed'>('checking')
 
   useEffect(() => {
     const testConnection = async () => {
       try {
-        setIsLoading(true);
-        setConnectionStatus('checking');
-        setError(null);
+        setIsLoading(true)
+        setConnectionStatus('checking')
+        setError(null)
 
-        console.log('Iniciando teste de conexão...');
+        console.log('Iniciando teste de conexão...')
         
-        // Verificar a conexão e contar produtos
-        const { count, error: countError } = await supabase
-          .from('produtos')
-          .select('*', { count: 'exact', head: true });
-
-        if (countError) {
-          console.error('Erro de conexão:', countError);
-          console.error('Detalhes do erro:', {
-            code: countError.code,
-            hint: countError.hint,
-            details: countError.details,
-            message: countError.message
-          });
-          setConnectionStatus('failed');
-          setError(`Erro de conexão: ${countError.message}. Código: ${countError.code}`);
-          return;
+        // Testar a conexão primeiro
+        const connectionTest = await testDatabaseConnection()
+        
+        if (!connectionTest.success) {
+          console.error('Erro de conexão:', connectionTest.error)
+          setError(`Erro de conexão: ${connectionTest.error}`)
+          setConnectionStatus('failed')
+          return
         }
 
-        console.log('Conexão estabelecida, contagem de produtos:', count);
-        setConnectionStatus('connected');
+        setConnectionStatus('connected')
+        console.log('Conexão estabelecida com sucesso')
 
         // Buscar os produtos
         const { data: produtos, error: productsError } = await supabase
           .from('produtos')
           .select('*')
           .order('created_at', { ascending: false })
-          .limit(10);
+          .limit(10)
 
         if (productsError) {
-          console.error('Erro ao buscar produtos:', productsError);
-          setError(`Erro ao buscar produtos: ${productsError.message}`);
-          return;
+          console.error('Erro ao buscar produtos:', productsError)
+          setError(`Erro ao buscar produtos: ${productsError.message}`)
+          return
         }
 
-        console.log('Produtos carregados:', produtos?.length || 0);
-        setProdutos(produtos || []);
-        setError(null);
+        console.log('Produtos carregados:', produtos?.length || 0)
+        setProdutos(produtos || [])
+        setError(null)
       } catch (err) {
-        console.error('Erro inesperado:', err);
-        setError('Erro inesperado ao conectar com o banco de dados');
-        setConnectionStatus('failed');
+        console.error('Erro inesperado:', err)
+        setError('Erro inesperado ao conectar com o banco de dados')
+        setConnectionStatus('failed')
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-    };
+    }
 
     testConnection()
   }, [])
