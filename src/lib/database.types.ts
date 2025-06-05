@@ -467,30 +467,7 @@ export interface Database {
           created_at?: string | null
           updated_at?: string | null
         }
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      [_ in never]: never
-    }
-    Enums: {
-      [_ in never]: never
-    }
-  }
-}
-        Update: {
-          id?: number
-          nome?: string
-          descricao?: string | null
-          preco?: number
-          imagem_url?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-      }
-    }
+      }    }
     Views: {
       [_ in never]: never
     }
