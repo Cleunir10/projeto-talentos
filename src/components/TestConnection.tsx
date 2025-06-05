@@ -13,7 +13,9 @@ export const TestConnection: React.FC = () => {
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'failed'>('checking')  useEffect(() => {
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'failed'>('checking');
+
+  useEffect(() => {
     const testConnection = async () => {
       try {
         setIsLoading(true)

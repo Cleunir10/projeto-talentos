@@ -1,45 +1,34 @@
 import { createClient } from '@supabase/supabase-js'
+import type { Database } from './database.types'
 
-// Import a nova configuração
-import { getSupabaseClient } from '../config/supabase'
+// Verifica se as variáveis de ambiente estão definidas
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-// Cria o cliente usando a nova configuração
-export const supabase = getSupabaseClient()
+if (!supabaseUrl) throw new Error('Missing VITE_SUPABASE_URL')
+if (!supabaseKey) throw new Error('Missing VITE_SUPABASE_ANON_KEY')
 
-const options = {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  },
-  global: {
-    headers: {
-      'X-Initial-Referrer': 'https://cleunir10.github.io',
-      'X-Client-Info': 'supabase-js/2.x',
+// Cria o cliente Supabase com as configurações adequadas
+export const supabase = createClient<Database>(
+  supabaseUrl,
+  supabaseKey,
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
     },
-  },
-  db: {
-    schema: 'public'
-  },
-}
-
-// Função para verificar se uma URL é válida
-const isValidUrl = (urlString: string): boolean => {
-  try {
-    new URL(urlString)
-    return true
-  } catch (e) {
-    return false
+    global: {
+      headers: {
+        'X-Initial-Referrer': 'https://cleunir10.github.io',
+        'X-Client-Info': 'supabase-js/2.x',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Authorization, X-Client-Info, apikey, Content-Type'
+      }
+    },
+    db: {
+      schema: 'public'
+    }
   }
-}
-
-// Validação das variáveis de ambiente
-if (!isValidUrl(supabaseUrl)) {
-  throw new Error(`URL do Supabase inválida: ${supabaseUrl}`)
-}
-
-// Criação do cliente com retry
-let retryCount = 0
-const maxRetries = 3
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, options)
+)
