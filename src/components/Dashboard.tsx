@@ -67,70 +67,51 @@ export function Dashboard({ userType, onLogout }: DashboardProps) {
     );
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Scissors className="h-8 w-8 text-green-600" />
-              <h1 className="text-2xl font-bold text-green-800">Talentos</h1>
-              <span className="text-sm text-gray-500 capitalize">
-                | {userType === 'costureira' ? 'Área da Costureira' : 'Área do Cliente'}
-              </span>
-            </div>
-            <div className="flex items-center space-x-3">
-              {userType === 'cliente' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setActiveTab('carrinho')}
-                  className="relative"
-                >
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Carrinho
-                  {cartItems.length > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-green-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
-                    </span>
-                  )}
-                </Button>
-              )}
-              <Button variant="ghost" size="sm" onClick={onLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Sair
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+  // Cliente não deveria ter acesso ao dashboard
+  if (userType !== 'costureira') {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Acesso Restrito</CardTitle>
+          <CardDescription>
+            Esta área é reservada para costureiras.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Dashboard</CardTitle>
-            <CardDescription>
-              Gerencie seus produtos e acompanhe seus pedidos
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="products">Produtos</TabsTrigger>
-                <TabsTrigger value="orders">Pedidos</TabsTrigger>
-              </TabsList>
-              <TabsContent value="products">
-                <ProductManager />
-              </TabsContent>
-              <TabsContent value="orders">
-                <Orders userType={userType} />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Dashboard da Costureira</h1>
+        <Button variant="outline" size="icon" onClick={onLogout}>
+          <LogOut className="h-5 w-5" />
+        </Button>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Gerenciamento</CardTitle>
+          <CardDescription>
+            Gerencie seus produtos e acompanhe seus pedidos
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="products">Produtos</TabsTrigger>
+              <TabsTrigger value="orders">Pedidos</TabsTrigger>
+            </TabsList>
+            <TabsContent value="products">
+              <ProductManager />
+            </TabsContent>
+            <TabsContent value="orders">
+              <Orders />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -15,7 +15,14 @@ import { useToast } from "@/hooks/use-toast";
 const Index = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginType, setLoginType] = useState<'costureira' | 'cliente'>('cliente');
   const [activeTab, setActiveTab] = useState<'produtos' | 'pedidos' | 'dashboard'>('produtos');
+
+  const handleLogin = (type: 'costureira' | 'cliente') => {
+    setLoginType(type);
+    setShowLoginModal(true);
+  };
 
   const handleSignOut = async () => {
     try {
@@ -30,6 +37,13 @@ const Index = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleLoginSuccess = () => {
+    setShowLoginModal(false);
+    toast({
+      description: "Login realizado com sucesso!",
+    });
   };
 
   return (
@@ -49,7 +63,12 @@ const Index = () => {
               </Button>
             </>
           ) : (
-            <LoginModal />
+            <LoginModal
+              isOpen={showLoginModal}
+              onClose={() => setShowLoginModal(false)}
+              userType={loginType}
+              onLoginSuccess={handleLoginSuccess}
+            />
           )}
         </div>
       </div>
@@ -132,7 +151,12 @@ const Index = () => {
           <>
             {activeTab === 'produtos' && <ProductCatalog />}
             {activeTab === 'pedidos' && <Orders />}
-            {activeTab === 'dashboard' && <Dashboard />}
+            {activeTab === 'dashboard' && (
+              <Dashboard
+                userType={loginType}
+                onLogout={handleSignOut}
+              />
+            )}
           </>
         )}
       </main>

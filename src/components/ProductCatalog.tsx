@@ -13,7 +13,7 @@ import { formatPrice } from "@/lib/utils";
 
 type Produto = Database['public']['Tables']['produtos']['Row'];
 
-export default function ProductCatalog() {
+export function ProductCatalog() {
   const { produtos, loading, error } = useProdutos();
   const { toast } = useToast();
   const { adicionarAoCarrinho } = useCarrinho();

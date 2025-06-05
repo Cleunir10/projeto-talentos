@@ -1,88 +1,74 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
+import { useState } from 'react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { useAuth } from '@/hooks/use-auth'
+import { useToast } from '@/hooks/use-toast'
 
 interface LoginModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  userType: 'costureira' | 'cliente';
-  onLoginSuccess: (type: 'costureira' | 'cliente') => void;
+  isOpen: boolean
+  onClose: () => void
+  userType: 'costureira' | 'cliente'
+  onLoginSuccess: () => void
 }
 
 export function LoginModal({ isOpen, onClose, userType, onLoginSuccess }: LoginModalProps) {
-  const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({
-    nome: '',
-    email: '',
-    telefone: '',
-    senha: '',
-    especialidade: '',
-    endereco: ''
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [mode, setMode] = useState<'login' | 'register'>('login')
+  
+  const { signIn, signUp } = useAuth()
+  const { toast } = useToast()
 
-  const { signIn, signUp } = useAuth();
-  const { toast } = useToast();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setIsLoading(true)
 
     try {
       if (mode === 'login') {
-        await signIn(formData.email, formData.senha);
+        await signIn(email, password)
         toast({
           title: "Login realizado com sucesso",
           description: "Bem-vindo de volta!",
-        });
+        })
       } else {
-        await signUp(formData.email, formData.senha);
+        await signUp(email, password)
         toast({
           title: "Conta criada com sucesso",
           description: "Verifique seu email para confirmar o cadastro.",
-        });
+        })
       }
-      onLoginSuccess(userType);
-      onClose();
+      onLoginSuccess()
+      onClose()
     } catch (error) {
       toast({
         title: "Erro",
         description: error instanceof Error ? error.message : "Ocorreu um erro",
         variant: "destructive",
-      });
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogTrigger asChild>
-        <Button variant="outline">Entrar</Button>
-      </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="text-center text-green-800">
-            {userType === 'costureira' ? 'Área da Costureira' : 'Área do Cliente'}
+          <DialogTitle>
+            {mode === 'login' ? 'Entrar como ' : 'Criar conta como '}
+            {userType === 'costureira' ? 'Costureira' : 'Cliente'}
           </DialogTitle>
         </DialogHeader>
-
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="email">Email</label>
             <Input
               id="email"
               type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
@@ -91,8 +77,8 @@ export function LoginModal({ isOpen, onClose, userType, onLoginSuccess }: LoginM
             <Input
               id="password"
               type="password"
-              value={formData.senha}
-              onChange={(e) => handleInputChange('senha', e.target.value)}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
@@ -113,5 +99,5 @@ export function LoginModal({ isOpen, onClose, userType, onLoginSuccess }: LoginM
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
