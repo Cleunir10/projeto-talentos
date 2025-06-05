@@ -14,7 +14,6 @@ export const TestConnection: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'failed'>('checking')
-
   useEffect(() => {
     const testConnection = async () => {
       try {
@@ -22,6 +21,8 @@ export const TestConnection: React.FC = () => {
         setConnectionStatus('checking')
         console.log('Testando conexão com Supabase...')
         console.log('URL da API:', import.meta.env.VITE_SUPABASE_URL)
+        console.log('Ambiente:', import.meta.env.MODE)
+        console.log('Base URL:', import.meta.env.BASE_URL)
         
         // Primeiro teste: buscar a contagem de produtos        // First test: health check
         const { data: healthCheck, error: healthError } = await supabase

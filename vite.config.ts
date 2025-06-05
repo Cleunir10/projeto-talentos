@@ -12,23 +12,19 @@ export default defineConfig(({ mode }) => ({
     headers: {
       "X-Frame-Options": "DENY",
       "X-Content-Type-Options": "nosniff",
-      "X-XSS-Protection": "1; mode=block",
-      // Adicionando CORS headers para desenvolvimento
+      "X-XSS-Protection": "1; mode=block",      // Adicionando CORS headers para desenvolvimento e produção
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
-      "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+      "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization, apikey, x-client-info"
     }
   },
   plugins: [
     react(),
-  ].filter(Boolean),
-  define: {
+  ].filter(Boolean),  define: {
     // Definindo variáveis de ambiente
     'process.env.NODE_ENV': JSON.stringify(mode),
-    'process.env.SUPABASE_URL': JSON.stringify(process.env.SUPABASE_URL),
-    'process.env.SUPABASE_ANON_KEY': JSON.stringify(process.env.SUPABASE_ANON_KEY),
-    'process.env.VITE_SUPABASE_URL': JSON.stringify(process.env.VITE_SUPABASE_URL),
-    'process.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(process.env.VITE_SUPABASE_ANON_KEY),
+    '__SUPABASE_URL__': JSON.stringify(process.env.VITE_SUPABASE_URL),
+    '__SUPABASE_ANON_KEY__': JSON.stringify(process.env.VITE_SUPABASE_ANON_KEY),
   },
   resolve: {
     alias: {
