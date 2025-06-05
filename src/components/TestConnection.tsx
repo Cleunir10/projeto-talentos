@@ -18,99 +18,57 @@ export const TestConnection: React.FC = () => {
   useEffect(() => {
     const testConnection = async () => {
       try {
-        setIsLoading(true)
-        setConnectionStatus('checking')
-        console.log('Testando conexão com Supabase...')
-        console.log('URL da API:', import.meta.env.VITE_SUPABASE_URL)
-        
-        // Teste de conectividade básica
-        try {
-          const response = await fetch(import.meta.env.VITE_SUPABASE_URL, {
-            method: 'GET',
-            mode: 'cors',
-            headers: {
-              'Accept': 'application/json',
-              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
-            }
-          })
-          console.log('Teste de conectividade:', response.status)
-        } catch (networkError) {
-          console.error('Erro de rede:', networkError)
-          setError(`Erro de rede: ${networkError.message}`)
-          setConnectionStatus('failed')
-          setIsLoading(false)
-          return
-        }
-        console.log('Ambiente:', import.meta.env.MODE)
-        console.log('Base URL:', import.meta.env.BASE_URL)
-        
-        // Teste de DNS
-        try {
-          const response = await fetch(import.meta.env.VITE_SUPABASE_URL)
-          console.log('Teste de DNS bem sucedido:', response.status)
-        } catch (dnsError) {
-          console.error('Erro no teste de DNS:', dnsError)
-          throw new Error(`Erro de DNS: ${dnsError.message}`)
-        }
-        
-        // Primeiro teste: buscar a contagem de produtos        // First test: health check
-        const { data: healthCheck, error: healthError } = await supabase
-          .from('_health')
-          .select('*')
-          .limit(1)
-          .single()
+        setIsLoading(true);
+        setConnectionStatus('checking');
+        setError(null);
 
-        if (healthError && !healthError.message.includes('nonexistent')) {
-          throw new Error(`Connection health check failed: ${healthError.message}`)
-        }
-
-        // Second test: count products
+        console.log('Iniciando teste de conexão...');
+        
+        // Verificar a conexão e contar produtos
         const { count, error: countError } = await supabase
           .from('produtos')
-          .select('*', { count: 'exact', head: true })
+          .select('*', { count: 'exact', head: true });
 
         if (countError) {
-          console.error('Connection test error:', countError)
-          console.error('Error details:', {
+          console.error('Erro de conexão:', countError);
+          console.error('Detalhes do erro:', {
             code: countError.code,
             hint: countError.hint,
             details: countError.details,
             message: countError.message
-          })
-          setConnectionStatus('failed')
-          setError(`Connection error: ${countError.message}. Code: ${countError.code}`)
-          setIsLoading(false)
-          return
+          });
+          setConnectionStatus('failed');
+          setError(`Erro de conexão: ${countError.message}. Código: ${countError.code}`);
+          return;
         }
 
-        console.log('Conexão estabelecida, contagem de produtos:', count)
-        setConnectionStatus('connected')
+        console.log('Conexão estabelecida, contagem de produtos:', count);
+        setConnectionStatus('connected');
 
-        // Agora vamos buscar os produtos
-        const { data, error: productsError } = await supabase
+        // Buscar os produtos
+        const { data: produtos, error: productsError } = await supabase
           .from('produtos')
           .select('*')
           .order('created_at', { ascending: false })
-          .limit(10)
+          .limit(10);
 
         if (productsError) {
-          console.error('Erro ao buscar produtos:', productsError)
-          setError(`Erro ao buscar produtos: ${productsError.message}`)
-          setIsLoading(false)
-          return
+          console.error('Erro ao buscar produtos:', productsError);
+          setError(`Erro ao buscar produtos: ${productsError.message}`);
+          return;
         }
 
-        console.log('Produtos carregados:', data?.length || 0)
-        setProdutos(data || [])
-        setError(null)
+        console.log('Produtos carregados:', produtos?.length || 0);
+        setProdutos(produtos || []);
+        setError(null);
       } catch (err) {
-        console.error('Erro inesperado:', err)
-        setError('Erro inesperado ao conectar com o banco de dados')
-        setConnectionStatus('failed')
+        console.error('Erro inesperado:', err);
+        setError('Erro inesperado ao conectar com o banco de dados');
+        setConnectionStatus('failed');
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
     testConnection()
   }, [])
