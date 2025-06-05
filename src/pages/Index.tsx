@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
 import { 
   Scissors, 
   Users, 
@@ -18,7 +26,9 @@ import {
   Leaf,
   CircleDollarSign,
   ShieldCheck,
-  Award
+  Award,
+  Menu,
+  X
 } from "lucide-react";
 import { LoginModal } from "@/components/LoginModal";
 import { Dashboard } from "@/components/Dashboard";
@@ -36,6 +46,7 @@ const Index = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginType, setLoginType] = useState<'costureira' | 'cliente'>('cliente');
   const [activeTab, setActiveTab] = useState<'produtos' | 'pedidos' | 'dashboard'>('produtos');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogin = (type: 'costureira' | 'cliente') => {
     setLoginType(type);
@@ -66,6 +77,160 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-green-100">
+      {/* Header de Navegação - Agora no topo */}
+      <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-50 border-b border-green-200 shadow-sm">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <div className="flex items-center">
+              <a href="/" className="flex items-center gap-2">
+                <img src="/logo.svg" alt="Talentos" className="h-8" />
+              </a>
+            </div>
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-6">
+              <NavigationMenu>
+                <NavigationMenuList>
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger className="text-green-800 hover:text-green-600">
+                      Produtos
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <div className="grid gap-3 p-6 w-[400px]">
+                        <div className="grid grid-cols-2 gap-4">
+                          <a href="/bolsas" className="group block">
+                            <div className="font-medium text-green-800 mb-1 group-hover:text-green-600">Bolsas</div>
+                            <div className="text-sm text-green-600">Bolsas artesanais de jeans reciclado</div>
+                          </a>
+                          <a href="/mochilas" className="group block">
+                            <div className="font-medium text-green-800 mb-1 group-hover:text-green-600">Mochilas</div>
+                            <div className="text-sm text-green-600">Mochilas sustentáveis e duráveis</div>
+                          </a>
+                        </div>
+                      </div>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger className="text-green-800 hover:text-green-600">
+                      Sobre Nós
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <div className="grid gap-3 p-6 w-[400px]">
+                        <a href="/nossa-historia" className="group block">
+                          <div className="font-medium text-green-800 mb-1 group-hover:text-green-600">Nossa História</div>
+                          <div className="text-sm text-green-600">Conheça nossa jornada e missão</div>
+                        </a>
+                        <a href="/impacto" className="group block">
+                          <div className="font-medium text-green-800 mb-1 group-hover:text-green-600">Impacto Social</div>
+                          <div className="text-sm text-green-600">Como transformamos vidas</div>
+                        </a>
+                      </div>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger className="text-green-800 hover:text-green-600">
+                      Para Costureiras
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <div className="grid gap-3 p-6 w-[400px]">
+                        <a href="/seja-costureira" className="group block">
+                          <div className="font-medium text-green-800 mb-1 group-hover:text-green-600">Seja uma Costureira</div>
+                          <div className="text-sm text-green-600">Junte-se à nossa comunidade</div>
+                        </a>
+                        <a href="/beneficios" className="group block">
+                          <div className="font-medium text-green-800 mb-1 group-hover:text-green-600">Benefícios</div>
+                          <div className="text-sm text-green-600">Vantagens de ser uma parceira</div>
+                        </a>
+                      </div>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <a href="/contato" className="text-green-800 hover:text-green-600">
+                      Contato
+                    </a>
+                  </NavigationMenuItem>
+                </NavigationMenuList>
+              </NavigationMenu>
+            </div>
+
+            {/* User Actions */}
+            <div className="flex items-center gap-4">
+              <Cart />
+              {user ? (
+                <>
+                  <span className="text-sm text-green-700 hidden md:inline">
+                    Olá, {user.email}
+                  </span>
+                  <Button variant="outline" size="icon" onClick={handleSignOut}>
+                    <LogOut className="h-5 w-5" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button 
+                    variant="ghost" 
+                    className="hidden md:inline-flex text-green-800 hover:text-green-600"
+                    onClick={() => handleLogin('cliente')}
+                  >
+                    Entrar
+                  </Button>
+                  <Button 
+                    className="hidden md:inline-flex bg-green-600 hover:bg-green-700"
+                    onClick={() => handleLogin('costureira')}
+                  >
+                    Seja Costureira
+                  </Button>
+                </>
+              )}
+              
+              {/* Mobile Menu Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden py-4 border-t border-green-200">
+              <nav className="flex flex-col gap-4">
+                <a href="/produtos" className="text-green-800 hover:text-green-600 px-4 py-2">Produtos</a>
+                <a href="/sobre" className="text-green-800 hover:text-green-600 px-4 py-2">Sobre Nós</a>
+                <a href="/para-costureiras" className="text-green-800 hover:text-green-600 px-4 py-2">Para Costureiras</a>
+                <a href="/contato" className="text-green-800 hover:text-green-600 px-4 py-2">Contato</a>
+                {!user && (
+                  <>
+                    <Button 
+                      variant="ghost" 
+                      className="justify-start px-4"
+                      onClick={() => handleLogin('cliente')}
+                    >
+                      Entrar
+                    </Button>
+                    <Button 
+                      className="justify-start px-4 bg-green-600 hover:bg-green-700"
+                      onClick={() => handleLogin('costureira')}
+                    >
+                      Seja Costureira
+                    </Button>
+                  </>
+                )}
+              </nav>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Hero Section com Vídeo/Imagem de Fundo */}
       <div className="relative h-[500px] bg-gradient-to-r from-green-900/80 to-green-600/80">
         <div className="absolute inset-0 overflow-hidden">
