@@ -1,12 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './database.types'
 
-// Verifica se as variáveis de ambiente estão definidas
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-if (!supabaseUrl) throw new Error('Missing VITE_SUPABASE_URL')
-if (!supabaseKey) throw new Error('Missing VITE_SUPABASE_ANON_KEY')
+// Supabase configuration
+const supabaseUrl = 'https://xutuizuvnscadwrllmkj.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1dHVpenV2bnNjYWR3cmxsbWtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4ODkzMTQsImV4cCI6MjA2NDQ2NTMxNH0.fdAlCDBE3h270sd4TY-T8XANKb_2nw6cAhv8PT8Xgg4'
 
 // Cria o cliente Supabase com as configurações adequadas
 export const supabase = createClient<Database>(
@@ -20,7 +17,10 @@ export const supabase = createClient<Database>(
     },
     global: {
       headers: {
-        'X-Custom-Header': 'application/json'
+        'X-Client-Info': 'supabase-js/2.x',
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json'
       }
     },
     db: {
@@ -29,21 +29,42 @@ export const supabase = createClient<Database>(
   }
 )
 
-// Função auxiliar para verificar a conexão
+// Função auxiliar para verificar a conexão e autenticação
 export const testDatabaseConnection = async () => {
   try {
+    // Verificar status da autenticação
+    const { data: { session }, error: authError } = await supabase.auth.getSession()
+    
+    if (authError) {
+      console.error('Erro ao verificar sessão:', authError)
+    }
+
+    // Tentar acessar a tabela produtos
     const { data, error } = await supabase
       .from('produtos')
       .select('count(*)', { count: 'exact', head: true })
     
     if (error) {
       console.error('Erro na conexão com o Supabase:', error)
-      return { success: false, error: error.message }
+      return { 
+        success: false, 
+        error: error.message,
+        isAuthenticated: !!session,
+        statusCode: error.code 
+      }
     }
     
-    return { success: true, data }
+    return { 
+      success: true, 
+      data,
+      isAuthenticated: !!session 
+    }
   } catch (err) {
     console.error('Erro inesperado ao testar conexão:', err)
-    return { success: false, error: 'Erro inesperado ao conectar com o banco de dados' }
+    return { 
+      success: false, 
+      error: 'Erro inesperado ao conectar com o banco de dados',
+      isAuthenticated: false
+    }
   }
 }

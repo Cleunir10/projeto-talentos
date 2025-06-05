@@ -2,13 +2,15 @@
 CREATE OR REPLACE FUNCTION public.handle_cors() 
 RETURNS trigger AS $$
 BEGIN
-    -- Adicionar headers CORS à resposta
+    -- Adicionar headers CORS à resposta com suporte a autenticação
     PERFORM set_config('response.headers', 
         jsonb_build_object(
-            'Access-Control-Allow-Origin', 'https://cleunir10.github.io',
-            'Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers', 'Authorization, Content-Type, Accept, Origin, X-Requested-With',
-            'Access-Control-Allow-Credentials', 'true'
+            'Access-Control-Allow-Origin', COALESCE(current_setting('request.header.origin', true), '*'),
+            'Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD',
+            'Access-Control-Allow-Headers', 'Authorization, X-Client-Info, Content-Type, Accept, Origin, X-Requested-With, apikey, Prefer',
+            'Access-Control-Allow-Credentials', 'true',
+            'Access-Control-Expose-Headers', 'Content-Range, Range',
+            'Access-Control-Max-Age', '3600'
         )::text,
         false
     );
@@ -27,19 +29,35 @@ BEGIN
         FROM pg_tables 
         WHERE schemaname = 'public'
     LOOP
+        -- Remover trigger existente se houver
+        EXECUTE format('DROP TRIGGER IF EXISTS handle_cors_trigger ON public.%I', tbl);
+        
+        -- Criar novo trigger
         EXECUTE format('
-            DROP TRIGGER IF EXISTS handle_cors_trigger ON public.%I;
             CREATE TRIGGER handle_cors_trigger
-            BEFORE INSERT OR UPDATE OR DELETE ON public.%I
-            FOR EACH ROW
+            AFTER SELECT OR INSERT OR UPDATE OR DELETE OR TRUNCATE
+            ON public.%I
+            FOR EACH STATEMENT
             EXECUTE FUNCTION public.handle_cors();
-        ', tbl, tbl);
+        ', tbl);
     END LOOP;
 END;
 $$ LANGUAGE plpgsql;
 
 -- Executar a função para habilitar CORS em todas as tabelas
 SELECT public.enable_cors_all_tables();
+
+-- Criar função para verificar status de autenticação
+CREATE OR REPLACE FUNCTION public.check_auth_status()
+RETURNS jsonb AS $$
+BEGIN
+    RETURN jsonb_build_object(
+        'authenticated', (auth.role() = 'authenticated'),
+        'role', auth.role(),
+        'user_id', auth.uid()
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Configurar política de RLS para permitir acesso anônimo
 ALTER TABLE public.produtos ENABLE ROW LEVEL SECURITY;

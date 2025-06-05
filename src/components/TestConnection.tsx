@@ -9,18 +9,26 @@ interface Produto {
   imagem_url: string | null
 }
 
+interface ConnectionState {
+  status: 'checking' | 'connected' | 'failed'
+  isAuthenticated: boolean
+  error: string | null
+}
+
 export const TestConnection: React.FC = () => {
   const [produtos, setProdutos] = useState<Produto[]>([])
-  const [error, setError] = useState<string | null>(null)
+  const [connection, setConnection] = useState<ConnectionState>({
+    status: 'checking',
+    isAuthenticated: false,
+    error: null
+  })
   const [isLoading, setIsLoading] = useState(true)
-  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'failed'>('checking')
 
   useEffect(() => {
     const testConnection = async () => {
       try {
         setIsLoading(true)
-        setConnectionStatus('checking')
-        setError(null)
+        setConnection(prev => ({ ...prev, status: 'checking', error: null }))
 
         console.log('Iniciando teste de conexão...')
         
@@ -29,12 +37,24 @@ export const TestConnection: React.FC = () => {
         
         if (!connectionTest.success) {
           console.error('Erro de conexão:', connectionTest.error)
-          setError(`Erro de conexão: ${connectionTest.error}`)
-          setConnectionStatus('failed')
+          setConnection({
+            status: 'failed',
+            isAuthenticated: connectionTest.isAuthenticated,
+            error: `Erro de conexão: ${connectionTest.error}${
+              connectionTest.statusCode === '401' 
+                ? ' (Não autorizado - verifique a autenticação)'
+                : ''
+            }`
+          })
           return
         }
 
-        setConnectionStatus('connected')
+        setConnection({
+          status: 'connected',
+          isAuthenticated: connectionTest.isAuthenticated,
+          error: null
+        })
+        
         console.log('Conexão estabelecida com sucesso')
 
         // Buscar os produtos
@@ -46,17 +66,22 @@ export const TestConnection: React.FC = () => {
 
         if (productsError) {
           console.error('Erro ao buscar produtos:', productsError)
-          setError(`Erro ao buscar produtos: ${productsError.message}`)
+          setConnection(prev => ({
+            ...prev,
+            error: `Erro ao buscar produtos: ${productsError.message}`
+          }))
           return
         }
 
         console.log('Produtos carregados:', produtos?.length || 0)
         setProdutos(produtos || [])
-        setError(null)
       } catch (err) {
         console.error('Erro inesperado:', err)
-        setError('Erro inesperado ao conectar com o banco de dados')
-        setConnectionStatus('failed')
+        setConnection({
+          status: 'failed',
+          isAuthenticated: false,
+          error: 'Erro inesperado ao conectar com o banco de dados'
+        })
       } finally {
         setIsLoading(false)
       }
@@ -66,7 +91,7 @@ export const TestConnection: React.FC = () => {
   }, [])
 
   const getStatusColor = () => {
-    switch (connectionStatus) {
+    switch (connection.status) {
       case 'checking':
         return 'text-yellow-500'
       case 'connected':
@@ -88,16 +113,16 @@ export const TestConnection: React.FC = () => {
     )
   }
 
-  if (error) {
+  if (connection.error) {
     return (
       <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
         <p className="text-red-500 font-semibold mb-2">Erro na conexão:</p>
-        <p className="text-red-700">{error}</p>
+        <p className="text-red-700">{connection.error}</p>
         <div className="mt-4">
           <p className="text-sm text-gray-600">Detalhes técnicos:</p>
           <ul className="list-disc list-inside text-sm text-gray-500">
             <li>URL da API: {import.meta.env.VITE_SUPABASE_URL}</li>
-            <li>Status: {connectionStatus}</li>
+            <li>Status: {connection.status}</li>
           </ul>
         </div>
       </div>
@@ -107,7 +132,7 @@ export const TestConnection: React.FC = () => {
   return (
     <div className="p-4">
       <div className={`text-lg font-semibold ${getStatusColor()} mb-4`}>
-        Status: {connectionStatus === 'connected' ? 'Conectado com sucesso!' : 'Verificando conexão...'}
+        Status: {connection.status === 'connected' ? 'Conectado com sucesso!' : 'Verificando conexão...'}
       </div>
       
       {produtos.length > 0 ? (

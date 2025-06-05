@@ -10,11 +10,21 @@ export function useProdutos() {
   return useQuery({
     queryKey: ['produtos'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Primeiro, verificar a sessão atual
+      const { data: sessionData } = await supabase.auth.getSession()
+      
+      const query = supabase
         .from('produtos')
         .select('*, costureira:costureiras(id, profiles(*)), categoria:categorias(*)')
         .eq('status', 'ativo')
-      if (error) throw error
+
+      const { data, error } = await query
+
+      if (error) {
+        console.error('Erro ao buscar produtos:', error)
+        throw error
+      }
+      
       return data as Produto[]
     },
   })
