@@ -1,7 +1,19 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Estas credenciais são públicas e só têm acesso a dados públicos
-const supabaseUrl = 'https://rftmgmpxcnkkheyrxzwa.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJmdG1nbXB4Y25ra2hleXJ4endhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDI0MDQ5ODAsImV4cCI6MjAxNzk4MDk4MH0.LxVZsdZ_t5EFFPBBy2OC6thF0ddmLIivOoQVezEo_dI'
+if (!import.meta.env.VITE_SUPABASE_URL) throw new Error('Missing VITE_SUPABASE_URL')
+if (!import.meta.env.VITE_SUPABASE_ANON_KEY) throw new Error('Missing VITE_SUPABASE_ANON_KEY')
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    detectSessionInUrl: true,
+  },
+  global: {
+    headers: {
+      'x-my-custom-header': 'projeto-talentos'
+    },
+  },
+})
