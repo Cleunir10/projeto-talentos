@@ -1,14 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 
-// @ts-ignore
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || window.__SUPABASE_URL__
-// @ts-ignore
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || window.__SUPABASE_ANON_KEY__
+// Import a nova configuração
+import { getSupabaseClient } from '../config/supabase'
 
-if (!supabaseUrl) throw new Error('Missing Supabase URL')
-if (!supabaseAnonKey) throw new Error('Missing Supabase Anon Key')
+// Cria o cliente usando a nova configuração
+export const supabase = getSupabaseClient()
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+const options = {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -16,8 +14,32 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   global: {
     headers: {
-      'X-Initial-Referrer': 'https://cleunir10.github.io/projeto-talentos/',
-      'X-Client-Info': 'projeto-talentos'
+      'X-Initial-Referrer': 'https://cleunir10.github.io',
+      'X-Client-Info': 'supabase-js/2.x',
     },
+  },
+  db: {
+    schema: 'public'
+  },
+}
+
+// Função para verificar se uma URL é válida
+const isValidUrl = (urlString: string): boolean => {
+  try {
+    new URL(urlString)
+    return true
+  } catch (e) {
+    return false
   }
-})
+}
+
+// Validação das variáveis de ambiente
+if (!isValidUrl(supabaseUrl)) {
+  throw new Error(`URL do Supabase inválida: ${supabaseUrl}`)
+}
+
+// Criação do cliente com retry
+let retryCount = 0
+const maxRetries = 3
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, options)

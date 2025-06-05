@@ -13,16 +13,43 @@ export const TestConnection: React.FC = () => {
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'failed'>('checking')
-  useEffect(() => {
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'failed'>('checking')  useEffect(() => {
     const testConnection = async () => {
       try {
         setIsLoading(true)
         setConnectionStatus('checking')
         console.log('Testando conexão com Supabase...')
         console.log('URL da API:', import.meta.env.VITE_SUPABASE_URL)
+        
+        // Teste de conectividade básica
+        try {
+          const response = await fetch(import.meta.env.VITE_SUPABASE_URL, {
+            method: 'GET',
+            mode: 'cors',
+            headers: {
+              'Accept': 'application/json',
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+            }
+          })
+          console.log('Teste de conectividade:', response.status)
+        } catch (networkError) {
+          console.error('Erro de rede:', networkError)
+          setError(`Erro de rede: ${networkError.message}`)
+          setConnectionStatus('failed')
+          setIsLoading(false)
+          return
+        }
         console.log('Ambiente:', import.meta.env.MODE)
         console.log('Base URL:', import.meta.env.BASE_URL)
+        
+        // Teste de DNS
+        try {
+          const response = await fetch(import.meta.env.VITE_SUPABASE_URL)
+          console.log('Teste de DNS bem sucedido:', response.status)
+        } catch (dnsError) {
+          console.error('Erro no teste de DNS:', dnsError)
+          throw new Error(`Erro de DNS: ${dnsError.message}`)
+        }
         
         // Primeiro teste: buscar a contagem de produtos        // First test: health check
         const { data: healthCheck, error: healthError } = await supabase
