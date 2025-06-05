@@ -39,10 +39,10 @@ export const testDatabaseConnection = async () => {
       console.error('Erro ao verificar sessão:', authError)
     }
 
-    // Tentar acessar a tabela produtos
-    const { data, error } = await supabase
+    // Tentar acessar a tabela produtos com a sintaxe correta de contagem
+    const { count, error } = await supabase
       .from('produtos')
-      .select('count(*)', { count: 'exact', head: true })
+      .select('*', { count: 'exact', head: true })
     
     if (error) {
       console.error('Erro na conexão com o Supabase:', error)
@@ -56,14 +56,14 @@ export const testDatabaseConnection = async () => {
     
     return { 
       success: true, 
-      data,
+      data: { count },
       isAuthenticated: !!session 
     }
   } catch (err) {
     console.error('Erro inesperado ao testar conexão:', err)
     return { 
       success: false, 
-      error: 'Erro inesperado ao conectar com o banco de dados',
+      error: err instanceof Error ? err.message : 'Erro inesperado ao conectar com o banco de dados',
       isAuthenticated: false
     }
   }
