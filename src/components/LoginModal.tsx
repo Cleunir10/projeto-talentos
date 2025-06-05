@@ -1,11 +1,9 @@
-
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Mail, Phone, Lock } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -24,11 +22,41 @@ export function LoginModal({ isOpen, onClose, userType, onLoginSuccess }: LoginM
     especialidade: '',
     endereco: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [mode, setMode] = useState<'login' | 'register'>('login');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { signIn, signUp } = useAuth();
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulação de login/cadastro
-    onLoginSuccess(userType);
+    setIsLoading(true);
+
+    try {
+      if (mode === 'login') {
+        await signIn(formData.email, formData.senha);
+        toast({
+          title: "Login realizado com sucesso",
+          description: "Bem-vindo de volta!",
+        });
+      } else {
+        await signUp(formData.email, formData.senha);
+        toast({
+          title: "Conta criada com sucesso",
+          description: "Verifique seu email para confirmar o cadastro.",
+        });
+      }
+      onLoginSuccess(userType);
+      onClose();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Ocorreu um erro",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -37,141 +65,52 @@ export function LoginModal({ isOpen, onClose, userType, onLoginSuccess }: LoginM
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogTrigger asChild>
+        <Button variant="outline">Entrar</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="text-center text-green-800">
             {userType === 'costureira' ? 'Área da Costureira' : 'Área do Cliente'}
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs value={isLogin ? "login" : "register"} onValueChange={(value) => setIsLogin(value === "login")}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Entrar</TabsTrigger>
-            <TabsTrigger value="register">Cadastrar</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="login">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    className="pl-10"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="senha">Senha</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="senha"
-                    type="password"
-                    placeholder="••••••••"
-                    className="pl-10"
-                    value={formData.senha}
-                    onChange={(e) => handleInputChange('senha', e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
-                Entrar
-              </Button>
-            </form>
-          </TabsContent>
-
-          <TabsContent value="register">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="nome">Nome Completo</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="nome"
-                    placeholder="Seu nome completo"
-                    className="pl-10"
-                    value={formData.nome}
-                    onChange={(e) => handleInputChange('nome', e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email-register">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="email-register"
-                    type="email"
-                    placeholder="seu@email.com"
-                    className="pl-10"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="telefone">Telefone</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="telefone"
-                    placeholder="(11) 99999-9999"
-                    className="pl-10"
-                    value={formData.telefone}
-                    onChange={(e) => handleInputChange('telefone', e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              {userType === 'costureira' && (
-                <div className="space-y-2">
-                  <Label htmlFor="especialidade">Especialidade</Label>
-                  <Input
-                    id="especialidade"
-                    placeholder="Ex: Roupas infantis, Bolsas, Acessórios"
-                    value={formData.especialidade}
-                    onChange={(e) => handleInputChange('especialidade', e.target.value)}
-                  />
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="senha-register">Senha</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="senha-register"
-                    type="password"
-                    placeholder="••••••••"
-                    className="pl-10"
-                    value={formData.senha}
-                    onChange={(e) => handleInputChange('senha', e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
-                Cadastrar
-              </Button>
-            </form>
-          </TabsContent>
-        </Tabs>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="email">Email</label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="password">Senha</label>
+            <Input
+              id="password"
+              type="password"
+              value={formData.senha}
+              onChange={(e) => handleInputChange('senha', e.target.value)}
+              required
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Carregando...' : mode === 'login' ? 'Entrar' : 'Criar conta'}
+            </Button>
+            <Button
+              type="button"
+              variant="link"
+              onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+            >
+              {mode === 'login'
+                ? 'Não tem uma conta? Cadastre-se'
+                : 'Já tem uma conta? Entre'}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

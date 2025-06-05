@@ -4,303 +4,374 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Image } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useProdutos } from "@/hooks/use-produtos";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { Plus, Pencil, Trash2 } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
+import type { Database } from "@/lib/database.types";
 
-interface Product {
-  id: string;
-  nome: string;
-  descricao: string;
-  preco: number;
-  imagem: string;
-  categoria: string;
-  estoque: number;
-}
+type Produto = Database['public']['Tables']['produtos']['Row'];
 
 export function ProductManager() {
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: '1',
-      nome: 'Bolsa Ecológica Jeans',
-      descricao: 'Bolsa feita com calças jeans recicladas, forrada e com alças reforçadas. Produto único e sustentável.',
-      preco: 75.90,
-      imagem: 'bolsa-ecologica-jeans.jpg',
-      categoria: 'Bolsas',
-      estoque: 5
-    },
-    {
-      id: '2',
-      nome: 'Mochila Jeans Vintage',
-      descricao: 'Mochila estilo vintage produzida com jeans reciclado, compartimento para notebook e bolsos externos.',
-      preco: 129.90,
-      imagem: 'mochila-jeans-vintage.jpg',
-      categoria: 'Bolsas',
-      estoque: 3
-    },
-    {
-      id: '3',
-      nome: 'Bolsa Tote Jeans Reciclado',
-      descricao: 'Bolsa tote espaçosa feita com retalhos de jeans em técnica patchwork, ideal para uso diário.',
-      preco: 85.00,
-      imagem: 'bolsa-tote-jeans-reciclado.jpg',
-      categoria: 'Bolsas',
-      estoque: 4
-    },
-    {
-      id: '4',
-      nome: 'Clutch de Jeans Elegante',
-      descricao: 'Clutch sofisticada produzida com jeans reciclado e aplicações artesanais.',
-      preco: 55.50,
-      imagem: 'clutch-jeans-elegante.jpg',
-      categoria: 'Bolsas',
-      estoque: 6
-    },
-    {
-      id: '5',
-      nome: 'Bolsa Carteiro Jeans',
-      descricao: 'Bolsa carteiro estilo mensageiro feita com jeans reciclado, ideal para o dia a dia e uso profissional.',
-      preco: 95.00,
-      imagem: 'bolsa-carteiro-jeans.jpg',
-      categoria: 'Bolsas',
-      estoque: 3
-    },
-    {
-      id: '6',
-      nome: 'Mini Bolsa Jeans Transversal',
-      descricao: 'Mini bolsa transversal feita com jeans reciclado, perfeita para sair com o essencial.',
-      preco: 65.00,
-      imagem: 'mini-bolsa-jeans-transversal.jpg',
-      categoria: 'Bolsas',
-      estoque: 4
-    }
-  ]);
-
-  const [isAddingProduct, setIsAddingProduct] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const { produtos, loading, error, adicionarProduto, atualizarProduto, removerProduto } = useProdutos();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Produto | null>(null);
   const [formData, setFormData] = useState({
-    nome: '',
-    descricao: '',
-    preco: '',
-    categoria: '',
-    estoque: '',
-    imagem: ''
+    nome: "",
+    descricao: "",
+    descricao_curta: "",
+    preco: "",
+    preco_promocional: "",
+    categoria_id: "",
+    imagem_url: "",
+    estoque: "0",
+    peso: "0",
+    material: "",
+    dimensoes: { largura: "", altura: "", profundidade: "" }
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const newProduct: Product = {
-      id: editingProduct?.id || Date.now().toString(),
-      nome: formData.nome,
-      descricao: formData.descricao,
-      preco: parseFloat(formData.preco),
-      categoria: formData.categoria,
-      estoque: parseInt(formData.estoque),
-      imagem: formData.imagem || 'placeholder.svg'
-    };
-
-    if (editingProduct) {
-      setProducts(prev => prev.map(p => p.id === editingProduct.id ? newProduct : p));
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    if (name.startsWith("dimensoes.")) {
+      const dimensaoKey = name.split(".")[1] as keyof typeof formData.dimensoes;
+      setFormData(prev => ({
+        ...prev,
+        dimensoes: {
+          ...prev.dimensoes,
+          [dimensaoKey]: value
+        }
+      }));
     } else {
-      setProducts(prev => [...prev, newProduct]);
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
+  };
 
-    resetForm();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const produtoData = {
+        nome: formData.nome,
+        descricao: formData.descricao,
+        descricao_curta: formData.descricao_curta,
+        preco: parseFloat(formData.preco),
+        preco_promocional: formData.preco_promocional ? parseFloat(formData.preco_promocional) : null,
+        categoria_id: formData.categoria_id,
+        imagem_url: formData.imagem_url,
+        estoque: parseInt(formData.estoque),
+        peso: parseFloat(formData.peso),
+        material: formData.material,
+        dimensoes: formData.dimensoes,
+        costureira_id: user?.id || ""
+      };
+
+      if (editingProduct) {
+        await atualizarProduto(editingProduct.id, produtoData);
+        toast({
+          description: "Produto atualizado com sucesso!",
+        });
+      } else {
+        await adicionarProduto(produtoData);
+        toast({
+          description: "Produto adicionado com sucesso!",
+        });
+      }
+
+      setIsOpen(false);
+      resetForm();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar o produto",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEdit = (produto: Produto) => {
+    setEditingProduct(produto);
+    setFormData({
+      nome: produto.nome,
+      descricao: produto.descricao,
+      descricao_curta: produto.descricao_curta,
+      preco: produto.preco.toString(),
+      preco_promocional: produto.preco_promocional?.toString() || "",
+      categoria_id: produto.categoria_id,
+      imagem_url: produto.imagem_url,
+      estoque: produto.estoque.toString(),
+      peso: produto.peso.toString(),
+      material: produto.material,
+      dimensoes: produto.dimensoes as { largura: string; altura: string; profundidade: string }
+    });
+    setIsOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Tem certeza que deseja remover este produto?")) return;
+
+    try {
+      await removerProduto(id);
+      toast({
+        description: "Produto removido com sucesso!",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível remover o produto",
+        variant: "destructive",
+      });
+    }
   };
 
   const resetForm = () => {
     setFormData({
-      nome: '',
-      descricao: '',
-      preco: '',
-      categoria: '',
-      estoque: '',
-      imagem: ''
+      nome: "",
+      descricao: "",
+      descricao_curta: "",
+      preco: "",
+      preco_promocional: "",
+      categoria_id: "",
+      imagem_url: "",
+      estoque: "0",
+      peso: "0",
+      material: "",
+      dimensoes: { largura: "", altura: "", profundidade: "" }
     });
-    setIsAddingProduct(false);
     setEditingProduct(null);
   };
 
-  const handleEdit = (product: Product) => {
-    setEditingProduct(product);
-    setFormData({
-      nome: product.nome,
-      descricao: product.descricao,
-      preco: product.preco.toString(),
-      categoria: product.categoria,
-      estoque: product.estoque.toString(),
-      imagem: product.imagem
-    });
-    setIsAddingProduct(true);
-  };
+  if (loading) {
+    return <div>Carregando produtos...</div>;
+  }
 
-  const handleDelete = (productId: string) => {
-    setProducts(prev => prev.filter(p => p.id !== productId));
-  };
+  if (error) {
+    return <div>Erro ao carregar produtos: {error.message}</div>;
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Meus Produtos</h2>
-          <p className="text-gray-600">Gerencie seus produtos sustentáveis</p>
-        </div>
-        <Dialog open={isAddingProduct} onOpenChange={setIsAddingProduct}>
+        <h2 className="text-xl font-semibold">Seus Produtos</h2>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-green-600 hover:bg-green-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Produto
+            <Button onClick={resetForm}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Produto
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
-                {editingProduct ? 'Editar Produto' : 'Novo Produto'}
+                {editingProduct ? "Editar Produto" : "Novo Produto"}
               </DialogTitle>
+              <DialogDescription>
+                Preencha os dados do produto abaixo
+              </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="nome">Nome do Produto</Label>
-                <Input
-                  id="nome"
-                  value={formData.nome}
-                  onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
-                  placeholder="Ex: Bolsa Ecológica"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="descricao">Descrição</Label>
-                <Textarea
-                  id="descricao"
-                  value={formData.descricao}
-                  onChange={(e) => setFormData(prev => ({ ...prev, descricao: e.target.value }))}
-                  placeholder="Descreva seu produto..."
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit}>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="nome">Nome do Produto</Label>
+                    <Input
+                      id="nome"
+                      name="nome"
+                      value={formData.nome}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="categoria_id">Categoria</Label>
+                    <Input
+                      id="categoria_id"
+                      name="categoria_id"
+                      value={formData.categoria_id}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <Label htmlFor="preco">Preço (R$)</Label>
+                  <Label htmlFor="descricao_curta">Descrição Curta</Label>
                   <Input
-                    id="preco"
-                    type="number"
-                    step="0.01"
-                    value={formData.preco}
-                    onChange={(e) => setFormData(prev => ({ ...prev, preco: e.target.value }))}
-                    placeholder="0,00"
+                    id="descricao_curta"
+                    name="descricao_curta"
+                    value={formData.descricao_curta}
+                    onChange={handleInputChange}
                     required
                   />
                 </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="estoque">Estoque</Label>
+                  <Label htmlFor="descricao">Descrição Completa</Label>
+                  <Textarea
+                    id="descricao"
+                    name="descricao"
+                    value={formData.descricao}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="preco">Preço</Label>
+                    <Input
+                      id="preco"
+                      name="preco"
+                      type="number"
+                      step="0.01"
+                      value={formData.preco}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="preco_promocional">Preço Promocional</Label>
+                    <Input
+                      id="preco_promocional"
+                      name="preco_promocional"
+                      type="number"
+                      step="0.01"
+                      value={formData.preco_promocional}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="estoque">Estoque</Label>
+                    <Input
+                      id="estoque"
+                      name="estoque"
+                      type="number"
+                      value={formData.estoque}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="peso">Peso (g)</Label>
+                    <Input
+                      id="peso"
+                      name="peso"
+                      type="number"
+                      value={formData.peso}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="material">Material</Label>
                   <Input
-                    id="estoque"
-                    type="number"
-                    value={formData.estoque}
-                    onChange={(e) => setFormData(prev => ({ ...prev, estoque: e.target.value }))}
-                    placeholder="0"
+                    id="material"
+                    name="material"
+                    value={formData.material}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dimensoes.largura">Largura (cm)</Label>
+                    <Input
+                      id="dimensoes.largura"
+                      name="dimensoes.largura"
+                      type="number"
+                      value={formData.dimensoes.largura}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dimensoes.altura">Altura (cm)</Label>
+                    <Input
+                      id="dimensoes.altura"
+                      name="dimensoes.altura"
+                      type="number"
+                      value={formData.dimensoes.altura}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dimensoes.profundidade">Profundidade (cm)</Label>
+                    <Input
+                      id="dimensoes.profundidade"
+                      name="dimensoes.profundidade"
+                      type="number"
+                      value={formData.dimensoes.profundidade}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="imagem_url">URL da Imagem</Label>
+                  <Input
+                    id="imagem_url"
+                    name="imagem_url"
+                    value={formData.imagem_url}
+                    onChange={handleInputChange}
                     required
                   />
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="categoria">Categoria</Label>
-                <Input
-                  id="categoria"
-                  value={formData.categoria}
-                  onChange={(e) => setFormData(prev => ({ ...prev, categoria: e.target.value }))}
-                  placeholder="Ex: Bolsas, Acessórios, Roupas"
-                  required
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancelar
+              <DialogFooter>
+                <Button type="submit">
+                  {editingProduct ? "Salvar" : "Adicionar"}
                 </Button>
-                <Button type="submit" className="bg-green-600 hover:bg-green-700">
-                  {editingProduct ? 'Atualizar' : 'Adicionar'}
-                </Button>
-              </div>
+              </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products.map((product) => (
-          <Card key={product.id} className="overflow-hidden">
-            <div className="aspect-square bg-gray-100 relative overflow-hidden">
-              <img
-                src={product.imagem}
-                alt={product.nome}
-                className="h-full w-full object-cover transition-opacity duration-300"
-                onError={(e) => {
-                  e.currentTarget.src = 'placeholder.svg';
-                  e.currentTarget.classList.add('opacity-50');
-                }}
-                loading="lazy"
-              />
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {produtos.map((produto) => (
+          <Card key={produto.id}>
             <CardHeader>
-              <CardTitle className="text-lg">{product.nome}</CardTitle>
-              <CardDescription className="line-clamp-2">
-                {product.descricao}
+              <div className="aspect-square relative mb-2">
+                <img
+                  src={produto.imagem_url || "/placeholder.svg"}
+                  alt={produto.nome}
+                  className="rounded-lg object-cover w-full h-full"
+                />
+              </div>
+              <CardTitle>{produto.nome}</CardTitle>
+              <CardDescription>
+                {produto.descricao_curta}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-2xl font-bold text-green-600">
-                  R$ {product.preco.toFixed(2)}
+              <div className="flex justify-between items-center">
+                <span className="font-semibold">
+                  {formatPrice(produto.preco)}
                 </span>
-                <span className="text-sm text-gray-500">
-                  Estoque: {product.estoque}
-                </span>
-              </div>
-              <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEdit(product)}
-                  className="flex-1"
-                >
-                  <Edit className="h-4 w-4 mr-1" />
-                  Editar
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDelete(product.id)}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleEdit(produto)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => handleDelete(produto.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
-
-      {products.length === 0 && (
-        <div className="text-center py-12">
-          <Image className="h-24 w-24 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Nenhum produto cadastrado
-          </h3>
-          <p className="text-gray-500 mb-4">
-            Comece adicionando seus primeiros produtos sustentáveis
-          </p>
-          <Button onClick={() => setIsAddingProduct(true)} className="bg-green-600 hover:bg-green-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar Primeiro Produto
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

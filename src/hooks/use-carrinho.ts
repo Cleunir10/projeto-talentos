@@ -1,117 +1,134 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { Database } from '../lib/database.types'
+import { useAuth } from './use-auth'
+import type { Database } from '../lib/database.types'
 
-export type CarrinhoItem = Database['public']['Tables']['carrinho']['Row']
-export type CarrinhoItemInsert = Database['public']['Tables']['carrinho']['Insert']
-export type CarrinhoItemUpdate = Database['public']['Tables']['carrinho']['Update']
+type Produto = Database['public']['Tables']['produtos']['Row']
+type ItemCarrinho = Database['public']['Tables']['carrinho_itens']['Row']
 
-export function useCarrinho(userId: string | undefined) {
-  return useQuery({
-    queryKey: ['carrinho', userId],
-    queryFn: async () => {
-      if (!userId) return []
+export function useCarrinho() {
+  const [itens, setItens] = useState<ItemCarrinho[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+  const { user } = useAuth()
+
+  useEffect(() => {
+    if (user) {
+      fetchCarrinho()
+    }
+  }, [user])
+
+  async function fetchCarrinho() {
+    try {
+      setLoading(true)
       const { data, error } = await supabase
-        .from('carrinho')
+        .from('carrinho_itens')
         .select('*, produto:produtos(*)')
-        .eq('user_id', userId)
-      if (error) throw error
-      return data as CarrinhoItem[]
-    },
-    enabled: !!userId,
-  })
-}
+        .eq('usuario_id', user?.id)
 
-export function useAddToCarrinho() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async (item: CarrinhoItemInsert) => {
-      // Verifica se já existe o produto no carrinho
-      const { data: existing } = await supabase
-        .from('carrinho')
-        .select('*')
-        .eq('user_id', item.user_id!)
-        .eq('produto_id', item.produto_id!)
-        .maybeSingle()
-
-      if (existing) {
-        // Atualiza a quantidade se já existe
-        const { data, error } = await supabase
-          .from('carrinho')
-          .update({ quantidade: existing.quantidade + item.quantidade })
-          .eq('id', existing.id)
-          .select()
-          .single()
-        if (error) throw error
-        return data
-      } else {
-        // Insere novo item se não existe
-        const { data, error } = await supabase
-          .from('carrinho')
-          .insert(item)
-          .select()
-          .single()
-        if (error) throw error
-        return data
+      if (error) {
+        throw error
       }
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['carrinho', variables.user_id] })
-    },
-  })
-}
 
-export function useUpdateCarrinhoItem() {
-  const queryClient = useQueryClient()
+      setItens(data || [])
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Erro ao buscar carrinho'))
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  return useMutation({
-    mutationFn: async ({ id, ...item }: CarrinhoItemUpdate & { id: string }) => {
-      const { data, error } = await supabase
-        .from('carrinho')
-        .update(item)
-        .eq('id', id)
-        .select()
-        .single()
-      if (error) throw error
-      return data
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['carrinho', variables.user_id] })
-    },
-  })
-}
+  async function adicionarAoCarrinho(produto: Produto, quantidade = 1) {
+    if (!user) throw new Error('Usuário não autenticado')
 
-export function useRemoveFromCarrinho() {
-  const queryClient = useQueryClient()
+    try {
+      const itemExistente = itens.find(item => item.produto_id === produto.id)
 
-  return useMutation({
-    mutationFn: async ({ id, userId }: { id: string; userId: string }) => {
+      if (itemExistente) {
+        const { error } = await supabase
+          .from('carrinho_itens')
+          .update({ quantidade: itemExistente.quantidade + quantidade })
+          .eq('id', itemExistente.id)
+
+        if (error) throw error
+
+        setItens(itens.map(item =>
+          item.id === itemExistente.id
+            ? { ...item, quantidade: item.quantidade + quantidade }
+            : item
+        ))
+      } else {
+        const { data, error } = await supabase
+          .from('carrinho_itens')
+          .insert({
+            usuario_id: user.id,
+            produto_id: produto.id,
+            quantidade,
+            preco_unitario: produto.preco
+          })
+          .select('*, produto:produtos(*)')
+          .single()
+
+        if (error) throw error
+
+        setItens([...itens, data])
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Erro ao adicionar ao carrinho'))
+      throw err
+    }
+  }
+
+  async function removerDoCarrinho(itemId: string) {
+    try {
       const { error } = await supabase
-        .from('carrinho')
+        .from('carrinho_itens')
         .delete()
-        .eq('id', id)
+        .eq('id', itemId)
+
       if (error) throw error
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['carrinho', variables.userId] })
-    },
-  })
-}
 
-export function useClearCarrinho() {
-  const queryClient = useQueryClient()
+      setItens(itens.filter(item => item.id !== itemId))
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Erro ao remover do carrinho'))
+      throw err
+    }
+  }
 
-  return useMutation({
-    mutationFn: async (userId: string) => {
+  async function atualizarQuantidade(itemId: string, quantidade: number) {
+    try {
+      if (quantidade <= 0) {
+        return removerDoCarrinho(itemId)
+      }
+
       const { error } = await supabase
-        .from('carrinho')
-        .delete()
-        .eq('user_id', userId)
+        .from('carrinho_itens')
+        .update({ quantidade })
+        .eq('id', itemId)
+
       if (error) throw error
-    },
-    onSuccess: (_, userId) => {
-      queryClient.invalidateQueries({ queryKey: ['carrinho', userId] })
-    },
-  })
+
+      setItens(itens.map(item =>
+        item.id === itemId
+          ? { ...item, quantidade }
+          : item
+      ))
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Erro ao atualizar quantidade'))
+      throw err
+    }
+  }
+
+  const total = itens.reduce((acc, item) => acc + (item.preco_unitario * item.quantidade), 0)
+
+  return {
+    itens,
+    loading,
+    error,
+    total,
+    adicionarAoCarrinho,
+    removerDoCarrinho,
+    atualizarQuantidade,
+    fetchCarrinho
+  }
 }

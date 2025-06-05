@@ -1,105 +1,106 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { Database } from '../lib/database.types'
+import type { Database } from '../lib/database.types'
 
-export type Produto = Database['public']['Tables']['produtos']['Row']
-export type ProdutoInsert = Database['public']['Tables']['produtos']['Insert']
-export type ProdutoUpdate = Database['public']['Tables']['produtos']['Update']
+type Produto = Database['public']['Tables']['produtos']['Row']
+type ProdutoInsert = Database['public']['Tables']['produtos']['Insert']
+type ProdutoUpdate = Database['public']['Tables']['produtos']['Update']
 
 export function useProdutos() {
-  return useQuery({
-    queryKey: ['produtos'],
-    queryFn: async () => {
-      // Primeiro, verificar a sessão atual
-      const { data: sessionData } = await supabase.auth.getSession()
-      
-      const query = supabase
-        .from('produtos')
-        .select('*, costureira:costureiras(id, profiles(*)), categoria:categorias(*)')
-        .eq('status', 'ativo')
+  const [produtos, setProdutos] = useState<Produto[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
 
-      const { data, error } = await query
+  useEffect(() => {
+    fetchProdutos()
+  }, [])
 
-      if (error) {
-        console.error('Erro ao buscar produtos:', error)
-        throw error
-      }
-      
-      return data as Produto[]
-    },
-  })
-}
-
-export function useProduto(id: string | undefined) {
-  return useQuery({
-    queryKey: ['produto', id],
-    queryFn: async () => {
-      if (!id) return null
+  async function fetchProdutos() {
+    try {
+      setLoading(true)
       const { data, error } = await supabase
         .from('produtos')
-        .select('*, costureira:costureiras(id, profiles(*)), categoria:categorias(*), avaliacoes:avaliacoes_produto(*)')
-        .eq('id', id)
-        .single()
-      if (error) throw error
-      return data as Produto
-    },
-    enabled: !!id,
-  })
-}
+        .select('*')
+        .order('nome')
 
-export function useCreateProduto() {
-  const queryClient = useQueryClient()
+      if (error) {
+        throw error
+      }
 
-  return useMutation({
-    mutationFn: async (produto: ProdutoInsert) => {
+      setProdutos(data || [])
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Erro ao buscar produtos'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function adicionarProduto(produto: ProdutoInsert) {
+    try {
       const { data, error } = await supabase
         .from('produtos')
         .insert(produto)
         .select()
         .single()
-      if (error) throw error
+
+      if (error) {
+        throw error
+      }
+
+      setProdutos([...produtos, data])
       return data
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['produtos'] })
-    },
-  })
-}
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Erro ao adicionar produto'))
+      throw err
+    }
+  }
 
-export function useUpdateProduto() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async ({ id, ...produto }: ProdutoUpdate & { id: string }) => {
+  async function atualizarProduto(id: string, produto: ProdutoUpdate) {
+    try {
       const { data, error } = await supabase
         .from('produtos')
         .update(produto)
         .eq('id', id)
         .select()
         .single()
-      if (error) throw error
+
+      if (error) {
+        throw error
+      }
+
+      setProdutos(produtos.map(p => p.id === id ? data : p))
       return data
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['produtos'] })
-      queryClient.invalidateQueries({ queryKey: ['produto', data.id] })
-    },
-  })
-}
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Erro ao atualizar produto'))
+      throw err
+    }
+  }
 
-export function useDeleteProduto() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async (id: string) => {
+  async function removerProduto(id: string) {
+    try {
       const { error } = await supabase
         .from('produtos')
         .delete()
         .eq('id', id)
-      if (error) throw error
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['produtos'] })
-    },
-  })
+
+      if (error) {
+        throw error
+      }
+
+      setProdutos(produtos.filter(p => p.id !== id))
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Erro ao remover produto'))
+      throw err
+    }
+  }
+
+  return {
+    produtos,
+    loading,
+    error,
+    fetchProdutos,
+    adicionarProduto,
+    atualizarProduto,
+    removerProduto
+  }
 }

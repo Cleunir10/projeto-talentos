@@ -8,6 +8,7 @@ import { Cart } from "@/components/Cart";
 import { Orders } from "@/components/Orders";
 import { Profile } from "@/components/Profile";
 import { Notifications } from "@/components/Notifications";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface CartItem {
   id: string;
@@ -107,89 +108,28 @@ export function Dashboard({ userType, onLogout }: DashboardProps) {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 mb-6">
-            {userType === 'costureira' ? (
-              <>
-                <TabsTrigger value="produtos" className="flex items-center space-x-2">
-                  <Package className="h-4 w-4" />
-                  <span>Produtos</span>
-                </TabsTrigger>
-                <TabsTrigger value="pedidos" className="flex items-center space-x-2">
-                  <ShoppingCart className="h-4 w-4" />
-                  <span>Pedidos</span>
-                </TabsTrigger>
-                <TabsTrigger value="perfil" className="flex items-center space-x-2">
-                  <User className="h-4 w-4" />
-                  <span>Perfil</span>
-                </TabsTrigger>
-                <TabsTrigger value="notificacoes" className="flex items-center space-x-2">
-                  <Bell className="h-4 w-4" />
-                  <span>Notificações</span>
-                </TabsTrigger>
-                <TabsTrigger value="catalogo" className="flex items-center space-x-2">
-                  <Scissors className="h-4 w-4" />
-                  <span>Explorar</span>
-                </TabsTrigger>
-              </>
-            ) : (
-              <>
-                <TabsTrigger value="catalogo" className="flex items-center space-x-2">
-                  <Scissors className="h-4 w-4" />
-                  <span>Catálogo</span>
-                </TabsTrigger>
-                <TabsTrigger value="carrinho" className="flex items-center space-x-2">
-                  <ShoppingCart className="h-4 w-4" />
-                  <span>Carrinho</span>
-                </TabsTrigger>
-                <TabsTrigger value="pedidos" className="flex items-center space-x-2">
-                  <Package className="h-4 w-4" />
-                  <span>Pedidos</span>
-                </TabsTrigger>
-                <TabsTrigger value="perfil" className="flex items-center space-x-2">
-                  <User className="h-4 w-4" />
-                  <span>Perfil</span>
-                </TabsTrigger>
-                <TabsTrigger value="notificacoes" className="flex items-center space-x-2">
-                  <Bell className="h-4 w-4" />
-                  <span>Notificações</span>
-                </TabsTrigger>
-              </>
-            )}
-          </TabsList>
-
-          {userType === 'costureira' && (
-            <TabsContent value="produtos">
-              <ProductManager />
-            </TabsContent>
-          )}
-
-          <TabsContent value="catalogo">
-            <ProductCatalog onAddToCart={addToCart} userType={userType} />
-          </TabsContent>
-
-          {userType === 'cliente' && (
-            <TabsContent value="carrinho">
-              <Cart 
-                items={cartItems}
-                onRemoveItem={removeFromCart}
-                onUpdateQuantity={updateQuantity}
-              />
-            </TabsContent>
-          )}
-
-          <TabsContent value="pedidos">
-            <Orders userType={userType} />
-          </TabsContent>
-
-          <TabsContent value="perfil">
-            <Profile userType={userType} />
-          </TabsContent>
-
-          <TabsContent value="notificacoes">
-            <Notifications userType={userType} />
-          </TabsContent>
-        </Tabs>
+        <Card>
+          <CardHeader>
+            <CardTitle>Dashboard</CardTitle>
+            <CardDescription>
+              Gerencie seus produtos e acompanhe seus pedidos
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="products">Produtos</TabsTrigger>
+                <TabsTrigger value="orders">Pedidos</TabsTrigger>
+              </TabsList>
+              <TabsContent value="products">
+                <ProductManager />
+              </TabsContent>
+              <TabsContent value="orders">
+                <Orders userType={userType} />
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

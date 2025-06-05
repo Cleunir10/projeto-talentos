@@ -1,123 +1,129 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { useAuth } from './use-auth'
 import { supabase } from '../lib/supabase'
-import { Database } from '../lib/database.types'
+import type { Database } from '../lib/database.types'
 
-export type Pedido = Database['public']['Tables']['pedidos']['Row']
-export type PedidoInsert = Database['public']['Tables']['pedidos']['Insert']
-export type PedidoUpdate = Database['public']['Tables']['pedidos']['Update']
-export type PedidoItem = Database['public']['Tables']['pedido_itens']['Row']
+type Pedido = Database['public']['Tables']['pedidos']['Row']
 
-export function usePedidos(userId: string | undefined) {
-  return useQuery({
-    queryKey: ['pedidos', userId],
-    queryFn: async () => {
-      if (!userId) return []
+export function usePedidos() {
+  const [pedidos, setPedidos] = useState<Pedido[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+  const { user } = useAuth()
+
+  useEffect(() => {
+    if (user) {
+      fetchPedidos()
+    }
+  }, [user])
+
+  async function fetchPedidos() {
+    try {
+      setLoading(true)
       const { data, error } = await supabase
         .from('pedidos')
-        .select('*, pedido_itens(*, produto:produtos(*))')
-        .eq('cliente_id', userId)
+        .select('*')
+        .eq('cliente_id', user?.id)
         .order('created_at', { ascending: false })
+
       if (error) throw error
-      return data as (Pedido & { pedido_itens: PedidoItem[] })[]
-    },
-    enabled: !!userId,
-  })
-}
 
-export function usePedido(id: string | undefined) {
-  return useQuery({
-    queryKey: ['pedido', id],
-    queryFn: async () => {
-      if (!id) return null
-      const { data, error } = await supabase
+      setPedidos(data || [])
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Erro ao buscar pedidos'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function criarPedido(
+    itensCarrinho: Array<{produto_id: string; quantidade: number; preco_unitario: number}>,
+    enderecoEntrega: any,
+    metodoPagamento: string
+  ) {
+    try {
+      // Calcular valores do pedido
+      const subtotal = itensCarrinho.reduce((acc, item) => 
+        acc + (item.preco_unitario * item.quantidade), 0
+      )
+      const frete = 0 // Implementar cálculo de frete
+      const taxaPlataforma = subtotal * 0.05 // 5% de taxa
+      const total = subtotal + frete + taxaPlataforma
+
+      // Criar pedido
+      const { data: pedido, error: pedidoError } = await supabase
         .from('pedidos')
-        .select('*, pedido_itens(*, produto:produtos(*), costureira:costureiras(*, profile:profiles(*)))')
-        .eq('id', id)
-        .single()
-      if (error) throw error
-      return data as Pedido & { pedido_itens: PedidoItem[] }
-    },
-    enabled: !!id,
-  })
-}
-
-export function useCreatePedido() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async ({ pedido, itens }: { 
-      pedido: PedidoInsert, 
-      itens: Database['public']['Tables']['pedido_itens']['Insert'][] 
-    }) => {
-      const { data: pedidoData, error: pedidoError } = await supabase
-        .from('pedidos')
-        .insert(pedido)
+        .insert({
+          cliente_id: user?.id,
+          numero_pedido: `PED-${Date.now()}`,
+          status: 'pendente',
+          subtotal,
+          frete,
+          taxa_plataforma: taxaPlataforma,
+          total,
+          endereco_entrega: enderecoEntrega,
+          metodo_pagamento: metodoPagamento,
+          status_pagamento: 'pendente'
+        })
         .select()
         .single()
+
       if (pedidoError) throw pedidoError
 
-      // Adiciona o id do pedido aos itens
-      const itensComPedido = itens.map(item => ({
-        ...item,
-        pedido_id: pedidoData.id
-      }))
-
+      // Criar itens do pedido
       const { error: itensError } = await supabase
         .from('pedido_itens')
-        .insert(itensComPedido)
+        .insert(
+          itensCarrinho.map(item => ({
+            pedido_id: pedido.id,
+            produto_id: item.produto_id,
+            quantidade: item.quantidade,
+            preco_unitario: item.preco_unitario
+          }))
+        )
+
       if (itensError) throw itensError
 
-      return pedidoData
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['pedidos', variables.pedido.cliente_id] })
-    },
-  })
-}
+      // Limpar carrinho
+      const { error: carrinhoError } = await supabase
+        .from('carrinho_itens')
+        .delete()
+        .eq('usuario_id', user?.id)
 
-export function useUpdatePedido() {
-  const queryClient = useQueryClient()
+      if (carrinhoError) throw carrinhoError
 
-  return useMutation({
-    mutationFn: async ({ 
-      id, 
-      ...update 
-    }: PedidoUpdate & { id: string }) => {
+      setPedidos([pedido, ...pedidos])
+      return pedido
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Erro ao criar pedido'))
+      throw err
+    }
+  }
+
+  async function atualizarStatusPedido(pedidoId: string, status: string) {
+    try {
       const { data, error } = await supabase
         .from('pedidos')
-        .update(update)
-        .eq('id', id)
+        .update({ status })
+        .eq('id', pedidoId)
         .select()
         .single()
-      if (error) throw error
-      return data
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['pedidos', data.cliente_id] })
-      queryClient.invalidateQueries({ queryKey: ['pedido', data.id] })
-    },
-  })
-}
 
-export function useUpdatePedidoItem() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async ({ 
-      id,
-      ...update 
-    }: Database['public']['Tables']['pedido_itens']['Update'] & { id: string }) => {
-      const { data, error } = await supabase
-        .from('pedido_itens')
-        .update(update)
-        .eq('id', id)
-        .select()
-        .single()
       if (error) throw error
-      return data
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['pedido', data.pedido_id] })
-    },
-  })
+
+      setPedidos(pedidos.map(p => p.id === pedidoId ? data : p))
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Erro ao atualizar status do pedido'))
+      throw err
+    }
+  }
+
+  return {
+    pedidos,
+    loading,
+    error,
+    criarPedido,
+    atualizarStatusPedido,
+    fetchPedidos
+  }
 }

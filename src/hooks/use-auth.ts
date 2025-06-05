@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { Database } from '../lib/database.types'
+import type { User } from '@supabase/supabase-js'
 
 export type Profile = Database['public']['Tables']['profiles']['Row']
 
@@ -100,4 +102,74 @@ export function useSignOut() {
       if (error) throw error
     },
   })
+}
+
+export function useAuth() {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    // Verificar sessão atual
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
+
+    // Escutar mudanças de autenticação
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  async function signUp(email: string, password: string) {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      })
+
+      if (error) throw error
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Erro ao criar conta'))
+      throw err
+    }
+  }
+
+  async function signIn(email: string, password: string) {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) throw error
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Erro ao fazer login'))
+      throw err
+    }
+  }
+
+  async function signOut() {
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Erro ao fazer logout'))
+      throw err
+    }
+  }
+
+  return {
+    user,
+    loading,
+    error,
+    signUp,
+    signIn,
+    signOut,
+  }
 }
