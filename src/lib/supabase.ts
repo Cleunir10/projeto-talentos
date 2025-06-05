@@ -10,22 +10,14 @@ if (!supabaseAnonKey) throw new Error('Missing Supabase Anon Key')
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true,
-    detectSessionInUrl: true,
     autoRefreshToken: true,
-    flowType: 'pkce',
+    persistSession: true,
+    detectSessionInUrl: true
   },
   global: {
     headers: {
-      'x-my-custom-header': 'projeto-talentos'
+      'X-Initial-Referrer': 'https://cleunir10.github.io/projeto-talentos/',
+      'X-Client-Info': 'projeto-talentos'
     },
-  },
-  db: {
-    schema: 'public'
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10
-    }
   }
 })
