@@ -18,9 +18,8 @@ export default defineConfig(({ mode }) => ({
       "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization, apikey, x-client-info"
     }
   },
-  plugins: [
-    react(),
-  ].filter(Boolean),  define: {
+  plugins: [react()],
+  define: {
     // Definindo variáveis de ambiente
     'process.env.NODE_ENV': JSON.stringify(mode),
     '__SUPABASE_URL__': JSON.stringify(process.env.VITE_SUPABASE_URL),
@@ -38,7 +37,9 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
+          'vendor': ['react', 'react-dom', 'react-router-dom'],
           'supabase': ['@supabase/supabase-js'],
+          'ui': ['@radix-ui/react-*'],
         }
       }
     }

@@ -1,36 +1,47 @@
-import { useState } from 'react'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { ShoppingCart, Minus, Plus, Trash2 } from 'lucide-react'
-import { useCarrinho } from '@/hooks/use-carrinho'
-import { useToast } from '@/hooks/use-toast'
-import { formatPrice } from '@/lib/utils'
+import * as React from 'react'
+import { ShoppingCart, Trash2 } from 'lucide-react'
+import { Button } from './ui/button'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from './ui/sheet'
+import { useStore } from '../contexts/store-context'
+import { useAuth } from '../contexts/auth-context'
+import { useToast } from '../hooks/use-toast'
 
 export function Cart() {
-  const [isOpen, setIsOpen] = useState(false)
-  const { itens, loading, total, atualizarQuantidade, removerDoCarrinho } = useCarrinho()
+  const { cart, isLoadingCart, removeFromCart, updateCartItem } = useStore()
+  const { user } = useAuth()
   const { toast } = useToast()
+  const [isOpen, setIsOpen] = React.useState(false)
 
-  if (loading) {
-    return null
-  }
+  const total = cart.reduce((acc, item) => {
+    const price = item.products?.price || 0
+    return acc + price * item.quantity
+  }, 0)
 
-  async function handleUpdateQuantity(itemId: string, quantidade: number) {
+  const handleQuantityChange = async (id: string, newQuantity: number) => {
     try {
-      await atualizarQuantidade(itemId, quantidade)
+      if (newQuantity < 1) {
+        await removeFromCart(id)
+      } else {
+        await updateCartItem(id, newQuantity)
+      }
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Não foi possível atualizar a quantidade",
+        description: "Não foi possível atualizar o carrinho",
         variant: "destructive",
       })
     }
   }
 
-  async function handleRemoveItem(itemId: string) {
+  const handleRemoveItem = async (id: string) => {
     try {
-      await removerDoCarrinho(itemId)
+      await removeFromCart(id)
       toast({
         description: "Item removido do carrinho",
       })
@@ -43,77 +54,80 @@ export function Cart() {
     }
   }
 
+  if (!user) return null
+
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative">
           <ShoppingCart className="h-5 w-5" />
-          {itens.length > 0 && (
-            <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
-              {itens.length}
+          {cart.length > 0 && (
+            <span className="absolute -top-1 -right-1 bg-green-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              {cart.length}
             </span>
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-lg">
+      <SheetContent>
         <SheetHeader>
-          <SheetTitle>Carrinho de Compras</SheetTitle>
+          <SheetTitle>Carrinho</SheetTitle>
         </SheetHeader>
-        {itens.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-muted-foreground">Seu carrinho está vazio</p>
-          </div>
-        ) : (
-          <>
-            <ScrollArea className="flex-1 -mx-6 px-6">
-              <div className="space-y-4">
-                {itens.map((item) => (
-                  <div key={item.id} className="flex items-center gap-4 py-4">
-                    <div className="flex-1">
-                      <h4 className="font-medium">{item.produto.nome}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {formatPrice(item.preco_unitario)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
+        <div className="mt-8 space-y-4">
+          {isLoadingCart ? (
+            <div className="text-center">Carregando...</div>
+          ) : cart.length === 0 ? (
+            <div className="text-center text-gray-500">Seu carrinho está vazio</div>
+          ) : (
+            <>
+              {cart.map((item) => (
+                <div key={item.id} className="flex items-center gap-4 py-2 border-b">
+                  <img
+                    src={item.products?.image_url}
+                    alt={item.products?.name}
+                    className="w-16 h-16 object-cover rounded"
+                  />
+                  <div className="flex-1">
+                    <h3 className="font-medium">{item.products?.name}</h3>
+                    <p className="text-sm text-gray-500">
+                      R$ {item.products?.price.toFixed(2)}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
                       <Button
                         variant="outline"
-                        size="icon"
-                        onClick={() => handleUpdateQuantity(item.id, item.quantidade - 1)}
+                        size="sm"
+                        onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
                       >
-                        <Minus className="h-4 w-4" />
+                        -
                       </Button>
-                      <span className="w-8 text-center">{item.quantidade}</span>
+                      <span className="w-8 text-center">{item.quantity}</span>
                       <Button
                         variant="outline"
-                        size="icon"
-                        onClick={() => handleUpdateQuantity(item.id, item.quantidade + 1)}
+                        size="sm"
+                        onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
                       >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => handleRemoveItem(item.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
+                        +
                       </Button>
                     </div>
                   </div>
-                ))}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveItem(item.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <div className="pt-4 border-t">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="font-medium">Total:</span>
+                  <span className="font-bold">R$ {total.toFixed(2)}</span>
+                </div>
+                <Button className="w-full">Finalizar Compra</Button>
               </div>
-            </ScrollArea>
-            <div className="border-t pt-4 mt-4">
-              <div className="flex items-center justify-between font-medium">
-                <span>Total</span>
-                <span>{formatPrice(total)}</span>
-              </div>
-              <Button className="w-full mt-4">
-                Finalizar Compra
-              </Button>
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
       </SheetContent>
     </Sheet>
   )

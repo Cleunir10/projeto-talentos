@@ -4,28 +4,37 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { useAuth } from '../contexts/auth-context'
-import { useFormValidation, loginSchema, type LoginFormData } from '../hooks/use-form-validation'
+import { useFormValidation, registerSchema, type RegisterFormData } from '../hooks/use-form-validation'
 import { useToast } from '../hooks/use-toast'
 
-export function LoginModal() {
-  const { isOpen, onClose } = useAuth()
-  const { toast } = useToast()
-  const { form, handleSubmit } = useFormValidation(loginSchema)
-  const { register, formState: { errors, isSubmitting } } = form
+interface RegisterModalProps {
+  isOpen: boolean
+  onClose: () => void
+  userType: 'costureira' | 'cliente'
+}
 
-  const onSubmit = async (data: LoginFormData) => {
+export function RegisterModal({ isOpen, onClose, userType }: RegisterModalProps) {
+  const { toast } = useToast()
+  const { form, handleSubmit } = useFormValidation(registerSchema)
+  const { register, formState: { errors, isSubmitting } } = form
+  const { signUp } = useAuth()
+
+  const onSubmit = async (data: RegisterFormData) => {
     try {
-      await useAuth().signIn(data.email, data.password)
+      await signUp(data.email, data.password, {
+        name: data.name,
+        tipo: userType
+      })
       onClose()
       toast({
         title: 'Sucesso',
-        description: 'Login realizado com sucesso!',
+        description: 'Conta criada com sucesso! Verifique seu e-mail para confirmar o cadastro.',
         variant: 'default'
       })
     } catch (error) {
       toast({
         title: 'Erro',
-        description: 'Falha ao realizar login. Verifique suas credenciais.',
+        description: 'Falha ao criar conta. Tente novamente.',
         variant: 'destructive'
       })
     }
@@ -35,9 +44,23 @@ export function LoginModal() {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Login</DialogTitle>
+          <DialogTitle>
+            Criar conta como {userType === 'costureira' ? 'Costureira' : 'Cliente'}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Nome</Label>
+            <Input
+              id="name"
+              type="text"
+              {...register('name')}
+              placeholder="Seu nome completo"
+            />
+            {errors.name && (
+              <p className="text-sm text-red-500">{errors.name.message}</p>
+            )}
+          </div>
           <div className="space-y-2">
             <Label htmlFor="email">E-mail</Label>
             <Input
@@ -62,11 +85,23 @@ export function LoginModal() {
               <p className="text-sm text-red-500">{errors.password.message}</p>
             )}
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              {...register('confirmPassword')}
+              placeholder="******"
+            />
+            {errors.confirmPassword && (
+              <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>
+            )}
+          </div>
           <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? 'Entrando...' : 'Entrar'}
+            {isSubmitting ? 'Criando conta...' : 'Criar conta'}
           </Button>
         </form>
       </DialogContent>
     </Dialog>
   )
-}
+} 
